@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+const crypto = require('crypto');
 
 const TELEGRAM_BOT_TOKEN = '8606442477:AAHGWiqoxONFe0544AfUWmxZCdoRysAcAJk';
 const TELEGRAM_CHAT_IDS = '-5477819014';
@@ -93,7 +93,7 @@ async function sendTelegram(message) {
     return results.some(res => res === true);
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     const origin = req.headers.origin || '';
     setSecurityHeaders(res, origin);
 
@@ -125,10 +125,4 @@ export default async function handler(req, res) {
     } catch (error) {
         return res.status(500).json({ success: false, error: 'Internal server error' });
     }
-}
-```[cite: 1]
-
-6. Kéo xuống dưới cùng, bấm nút màu xanh **Commit changes...**, sau đó bấm **Commit changes** một lần nữa để xác nhận.
-7. Ngay sau khi bạn làm xong trên GitHub, **Vercel sẽ tự động phát hiện thay đổi và tự động cập nhật (redeploy) lại trang web của bạn trong vòng vài giây**. 
-
-Lúc này, bạn quay lại website của mình nhập thử thông tin, dữ liệu sẽ bắn về Telegram ngay lập tức!
+};
